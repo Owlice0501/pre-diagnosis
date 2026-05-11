@@ -960,9 +960,23 @@
 
   // ─── Operator Mode ───────────────────────────────────────────────
   const APP_STATE_KEY = 'app_state_v1';
+
+  // ⬇ スタッフ用パスワード(変更したい場合はここを書き換えてください)
+  const STAFF_PASSWORD = 'owlice2026';
+
   const opModeRequested = new URLSearchParams(location.search).has('op');
-  if (opModeRequested) sessionStorage.setItem('opSession', '1');
-  const isOpSession = sessionStorage.getItem('opSession') === '1';
+  let isOpSession = sessionStorage.getItem('opSession') === '1';
+
+  // ?op 付きで来た & まだ認証してない → パスワード入力を求める
+  if (opModeRequested && !isOpSession) {
+    const input = prompt('スタッフ用パスワードを入力してください:');
+    if (input === STAFF_PASSWORD) {
+      sessionStorage.setItem('opSession', '1');
+      isOpSession = true;
+    } else if (input !== null) {
+      alert('パスワードが違います。');
+    }
+  }
 
   let appState;
   try { appState = JSON.parse(localStorage.getItem(APP_STATE_KEY)) || { customers: {}, activeCustomerId: null }; }
@@ -1305,8 +1319,8 @@
     setTimeout(() => fb.classList.remove('show'), 2000);
   });
 
-  // Initial view
-  setOpView(opModeRequested ? VIEW.OP_LIST : VIEW.CUSTOMER);
+  // Initial view(認証通った場合のみ管理画面を表示)
+  setOpView(isOpSession ? VIEW.OP_LIST : VIEW.CUSTOMER);
 })();
 </script>
 
