@@ -1,0 +1,1314 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="description" content="物販・IPO抽選などで必要なクレカや証券口座の診断ツール" />
+<title>下準備診断</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet" />
+<style>
+  *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+  :root{
+    --bg:#fafaf9;
+    --surface:#ffffff;
+    --text:#0a0a0a;
+    --text-2:#525252;
+    --text-3:#8a8a8a;
+    --border:#e8e8e6;
+    --border-2:#d4d4d2;
+    --accent:#0a0a0a;
+    --accent-2:#262626;
+    --success:#047857;
+    --success-bg:#ecfdf5;
+  }
+  html,body{height:100%;overflow:hidden;overscroll-behavior:none}
+  body{
+    font-family:'Inter','Noto Sans JP',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    color:var(--text);background:var(--bg);
+    -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
+    font-feature-settings:"palt","tnum";line-height:1.6;
+  }
+  .mono{font-family:'JetBrains Mono',monospace;font-variant-numeric:tabular-nums}
+
+  /* Backdrop subtle gradient mesh */
+  body::before{
+    content:'';position:fixed;inset:0;z-index:-1;
+    background:
+      radial-gradient(circle at 18% 8%,rgba(120,120,120,0.04),transparent 40%),
+      radial-gradient(circle at 92% 88%,rgba(120,120,120,0.05),transparent 45%);
+    pointer-events:none;
+  }
+
+  .app{height:100vh;height:100dvh;display:flex;flex-direction:column;position:relative}
+
+  /* Top nav */
+  .top-nav{
+    position:fixed;top:0;left:0;right:0;height:64px;z-index:100;
+    display:flex;align-items:center;justify-content:space-between;
+    padding:0 28px;
+    background:rgba(250,250,249,0.72);
+    backdrop-filter:saturate(180%) blur(20px);
+    -webkit-backdrop-filter:saturate(180%) blur(20px);
+    border-bottom:1px solid var(--border);
+  }
+  .brand{font-size:14px;font-weight:600;letter-spacing:-0.01em;display:flex;align-items:center;gap:8px}
+  .brand-dot{width:6px;height:6px;background:var(--accent);border-radius:50%}
+  .step-indicator{font-size:13px;color:var(--text-3);font-weight:500;letter-spacing:0.04em}
+  .step-indicator strong{color:var(--text);font-weight:600}
+
+  /* Slides */
+  .slides-container{flex:1;overflow:hidden;padding-top:64px;padding-bottom:88px}
+  .slides-track{display:flex;height:100%;transition:transform 0.7s cubic-bezier(0.22,1,0.36,1);will-change:transform}
+  .slide{
+    flex:0 0 100%;width:100%;height:100%;
+    overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;
+    padding:56px 28px;
+    display:flex;align-items:flex-start;justify-content:center;
+  }
+  .slide-inner{max-width:720px;width:100%;margin:auto 0}
+
+  /* Stagger fade in for active slide */
+  .slide.is-active .slide-inner > *{
+    animation:rise 0.7s cubic-bezier(0.22,1,0.36,1) backwards;
+  }
+  .slide.is-active .slide-inner > *:nth-child(1){animation-delay:0.06s}
+  .slide.is-active .slide-inner > *:nth-child(2){animation-delay:0.13s}
+  .slide.is-active .slide-inner > *:nth-child(3){animation-delay:0.20s}
+  .slide.is-active .slide-inner > *:nth-child(4){animation-delay:0.27s}
+  .slide.is-active .slide-inner > *:nth-child(5){animation-delay:0.34s}
+  @keyframes rise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+
+  /* Hero */
+  .eyebrow{
+    display:inline-block;font-size:11px;font-weight:600;
+    color:var(--text-3);letter-spacing:0.18em;text-transform:uppercase;
+    margin-bottom:24px;
+  }
+  .hero-title{
+    font-size:clamp(36px,6.4vw,60px);font-weight:700;line-height:1.1;
+    letter-spacing:-0.035em;margin-bottom:24px;
+  }
+  .hero-title em{
+    font-style:normal;
+    background:linear-gradient(135deg,#0a0a0a 0%,#666 100%);
+    -webkit-background-clip:text;background-clip:text;
+    -webkit-text-fill-color:transparent;
+  }
+  .hero-lead{
+    font-size:16px;color:var(--text-2);line-height:1.85;
+    max-width:560px;margin-bottom:36px;
+  }
+  .hero-lead strong{color:var(--text);font-weight:600}
+  .hero-meta{display:flex;gap:36px;flex-wrap:wrap;margin-bottom:40px;
+    padding:20px 24px;background:var(--surface);
+    border:1px solid var(--border);border-radius:16px;
+    width:fit-content;
+  }
+  .hero-meta-item{display:flex;flex-direction:column;gap:4px}
+  .hero-meta-item .label{font-size:11px;font-weight:500;color:var(--text-3);letter-spacing:0.08em;text-transform:uppercase}
+  .hero-meta-item .value{font-size:18px;font-weight:600;letter-spacing:-0.01em}
+
+  /* Hero name field */
+  .hero-name-field{margin-bottom:32px;max-width:380px}
+  .hero-name-field label{
+    display:block;font-size:11px;font-weight:600;letter-spacing:0.08em;
+    text-transform:uppercase;color:var(--text-3);margin-bottom:8px;
+  }
+  .hero-name-field input{
+    width:100%;padding:12px 14px;
+    border:1px solid var(--border);border-radius:10px;
+    font-size:15px;background:var(--surface);font-family:inherit;color:var(--text);
+    transition:all 0.15s ease;
+  }
+  .hero-name-field input:focus{
+    outline:none;border-color:var(--accent);
+    box-shadow:0 0 0 3px rgba(10,10,10,0.06);
+  }
+
+  /* Save to admin button (result page) */
+  .save-result-btn{
+    display:inline-flex;align-items:center;justify-content:center;gap:8px;
+    width:100%;margin-top:18px;padding:14px 24px;
+    background:var(--surface);color:var(--text);
+    border:1px solid var(--border-2);border-radius:12px;
+    font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;
+    transition:all 0.18s ease;
+  }
+  .save-result-btn:hover:not(:disabled){
+    background:var(--accent);color:white;border-color:var(--accent);
+    transform:translateY(-1px);box-shadow:0 8px 20px rgba(0,0,0,0.14);
+  }
+  .save-result-btn:disabled{
+    background:var(--success-bg);color:var(--success);
+    border-color:var(--success-bg);cursor:default;
+  }
+
+  .cta-primary{
+    display:inline-flex;align-items:center;gap:12px;
+    padding:18px 32px;background:var(--accent);color:white;
+    border:none;border-radius:100px;
+    font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;
+    transition:all 0.22s cubic-bezier(0.4,0,0.2,1);letter-spacing:0.01em;
+  }
+  .cta-primary:hover{background:var(--accent-2);transform:translateY(-2px);box-shadow:0 14px 32px rgba(0,0,0,0.20)}
+  .cta-primary svg{transition:transform 0.22s}
+  .cta-primary:hover svg{transform:translateX(4px)}
+
+  /* Section */
+  .section-num{
+    display:inline-flex;align-items:center;gap:10px;
+    font-size:11px;font-weight:600;letter-spacing:0.14em;color:var(--text-3);
+    margin-bottom:18px;
+  }
+  .section-num::before{content:'';width:24px;height:1px;background:var(--text-3)}
+  .section-title{
+    font-size:clamp(28px,4vw,40px);font-weight:700;
+    letter-spacing:-0.025em;line-height:1.25;margin-bottom:18px;
+  }
+  .section-desc{
+    color:var(--text-2);font-size:15px;line-height:1.85;
+    margin-bottom:32px;padding-left:16px;border-left:2px solid var(--border-2);
+  }
+  .section-desc strong{color:var(--text);font-weight:600}
+
+  /* Check items */
+  .check-list{display:flex;flex-direction:column;gap:8px}
+  .check-item{
+    display:flex;align-items:center;gap:14px;
+    padding:18px 20px;background:var(--surface);
+    border:1px solid var(--border);border-radius:14px;
+    cursor:pointer;user-select:none;
+    transition:all 0.18s cubic-bezier(0.4,0,0.2,1);
+  }
+  .check-item:hover{border-color:var(--border-2);transform:translateY(-1px);box-shadow:0 4px 16px rgba(0,0,0,0.04)}
+  .check-item.checked{border-color:var(--accent);background:#fcfcfb}
+  .check-item.check-item-all{background:#f7f7f5;border-color:var(--border-strong);margin-bottom:4px}
+  .check-item.check-item-all.checked{background:#fafaf9}
+  .check-item.check-item-all .check-label{font-weight:600;letter-spacing:0.01em}
+  .check-item input{position:absolute;opacity:0;pointer-events:none}
+  .check-box{
+    flex-shrink:0;width:22px;height:22px;
+    border:1.5px solid var(--border-2);border-radius:7px;background:white;
+    position:relative;transition:all 0.18s cubic-bezier(0.4,0,0.2,1);
+  }
+  .check-item.checked .check-box{background:var(--accent);border-color:var(--accent);transform:scale(1.05)}
+  .check-item.checked .check-box::after{
+    content:'';position:absolute;left:6px;top:2px;
+    width:6px;height:12px;border:solid white;border-width:0 2px 2px 0;
+    transform:rotate(45deg);
+  }
+  .check-label{font-size:15px;line-height:1.55;flex:1}
+
+  /* Form */
+  .form-card{
+    background:var(--surface);border:1px solid var(--border);
+    border-radius:20px;padding:36px;
+  }
+  .form-row{margin-bottom:18px}
+  label.field-label{
+    display:block;font-size:11px;font-weight:600;color:var(--text-2);
+    margin-bottom:8px;letter-spacing:0.06em;text-transform:uppercase;
+  }
+  input[type="text"],input[type="email"]{
+    width:100%;padding:14px 16px;
+    border:1px solid var(--border);border-radius:12px;
+    font-size:15px;background:var(--bg);font-family:inherit;color:var(--text);
+    transition:all 0.15s ease;
+  }
+  input[type="text"]:focus,input[type="email"]:focus{
+    outline:none;border-color:var(--accent);background:white;
+    box-shadow:0 0 0 4px rgba(10,10,10,0.06);
+  }
+  .consent{
+    display:flex;align-items:flex-start;gap:10px;
+    margin:16px 0 24px;font-size:13px;color:var(--text-2);cursor:pointer;
+  }
+  .consent input{margin-top:3px;accent-color:var(--accent)}
+  .submit-btn{
+    width:100%;padding:16px 24px;
+    background:var(--accent);color:white;border:none;border-radius:12px;
+    font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;
+    transition:all 0.18s ease;
+  }
+  .submit-btn:hover:not(:disabled){background:var(--accent-2);transform:translateY(-1px);box-shadow:0 12px 28px rgba(0,0,0,0.18)}
+  .submit-btn:disabled{background:#d4d4d2;cursor:not-allowed}
+
+  /* Result */
+  .result-badge{
+    display:inline-flex;align-items:center;gap:8px;
+    padding:6px 14px;background:var(--success-bg);color:var(--success);
+    border-radius:100px;font-size:12px;font-weight:600;
+    letter-spacing:0.04em;margin-bottom:20px;
+  }
+  .result-badge::before{content:'';width:6px;height:6px;background:currentColor;border-radius:50%}
+  .priority-list{
+    background:var(--surface);border:1px solid var(--border);
+    border-radius:16px;overflow:hidden;margin:28px 0;
+  }
+  .priority-item{
+    display:flex;align-items:center;gap:14px;
+    padding:18px 20px;border-bottom:1px solid var(--border);
+    color:inherit;
+    transition:background 0.15s ease;
+  }
+  .priority-item:last-child{border-bottom:0}
+  .priority-arrow{
+    margin-left:auto;flex-shrink:0;color:var(--text-3);
+    text-decoration:none;
+    display:inline-flex;align-items:center;gap:4px;
+    font-size:13px;font-weight:500;
+    transition:transform 0.15s ease,color 0.15s ease;
+  }
+  a.priority-arrow{cursor:pointer}
+  a.priority-arrow:hover{color:var(--text);transform:translateX(2px)}
+  .priority-num{
+    flex-shrink:0;width:28px;height:28px;border-radius:50%;
+    background:var(--accent);color:white;
+    font-size:12px;font-weight:700;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .priority-text{flex:1}
+  .priority-text strong{display:block;font-weight:600;font-size:15px;line-height:1.5}
+  .priority-text span{color:var(--text-2);font-size:14px;line-height:1.7;display:block;margin-top:2px}
+  .priority-item .pending-badge{
+    margin-left:auto;flex-shrink:0;
+    padding:3px 10px;background:#fafaf9;border:1px solid var(--border);
+    border-radius:99px;font-size:11px;color:var(--text-3);font-weight:500;
+  }
+
+  /* やる/やらない チェックボックス(結果ページ) */
+  .task-include{
+    flex-shrink:0;position:relative;display:inline-flex;align-items:center;
+    cursor:pointer;padding:6px;margin:-6px 0 -6px 4px;
+  }
+  .task-include-input{position:absolute;opacity:0;pointer-events:none}
+  .task-include-box{
+    width:22px;height:22px;border:1.5px solid var(--border-2);
+    border-radius:7px;background:white;position:relative;
+    transition:all 0.18s ease;
+  }
+  .task-include-input:checked + .task-include-box{
+    background:var(--accent);border-color:var(--accent);transform:scale(1.05);
+  }
+  .task-include-input:checked + .task-include-box::after{
+    content:'';position:absolute;left:6px;top:2px;
+    width:6px;height:12px;border:solid white;border-width:0 2px 2px 0;
+    transform:rotate(45deg);
+  }
+  .priority-item.excluded{opacity:0.4}
+  .priority-item.excluded .priority-text strong{text-decoration:line-through;color:var(--text-3)}
+  .priority-item.excluded .pending-badge,
+  .priority-item.excluded .priority-arrow{opacity:0.5}
+  .info-card{
+    background:var(--surface);border:1px solid var(--border);border-radius:14px;
+    padding:18px 20px;margin:24px 0;
+    font-size:13.5px;color:var(--text-2);line-height:1.75;
+  }
+  .info-card strong{color:var(--text);font-weight:600}
+  .cta-box{
+    background:var(--accent);color:white;border-radius:20px;
+    padding:40px;margin:28px 0;text-align:center;
+    position:relative;overflow:hidden;
+  }
+  .cta-box::before{
+    content:'';position:absolute;inset:0;
+    background:radial-gradient(circle at 30% 20%,rgba(255,255,255,0.08),transparent 60%);
+    pointer-events:none;
+  }
+  .cta-box h3{font-size:22px;font-weight:700;margin-bottom:12px;line-height:1.45;letter-spacing:-0.01em}
+  .cta-box p{color:rgba(255,255,255,0.72);margin-bottom:26px;font-size:14.5px;line-height:1.8}
+  .cta-btn-light{
+    display:inline-flex;align-items:center;gap:10px;
+    padding:14px 28px;background:white;color:var(--accent);
+    border-radius:100px;text-decoration:none;font-weight:600;font-size:15px;
+    transition:transform 0.15s ease,box-shadow 0.15s ease;
+  }
+  .cta-btn-light:hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(0,0,0,0.25)}
+
+  /* Wait notice */
+  .wait-notice{
+    display:flex;align-items:center;gap:16px;
+    padding:22px 24px;margin:28px 0;
+    background:var(--accent);color:white;border-radius:16px;
+    position:relative;overflow:hidden;
+  }
+  .wait-notice::before{
+    content:'';position:absolute;inset:0;
+    background:radial-gradient(circle at 20% 20%,rgba(255,255,255,0.06),transparent 60%);
+    pointer-events:none;
+  }
+  .wait-icon{
+    flex-shrink:0;width:40px;height:40px;border-radius:50%;
+    background:rgba(255,255,255,0.10);
+    display:flex;align-items:center;justify-content:center;
+    color:white;position:relative;z-index:1;
+  }
+  .wait-content{position:relative;z-index:1;line-height:1.55}
+  .wait-content strong{display:block;font-weight:600;font-size:15px;letter-spacing:-0.005em}
+  .wait-content span{display:block;color:rgba(255,255,255,0.65);font-size:13px;margin-top:2px}
+
+  /* Bottom nav */
+  .bottom-nav{
+    position:fixed;bottom:0;left:0;right:0;height:88px;z-index:100;
+    padding:0 28px;
+    display:flex;align-items:center;justify-content:space-between;
+    background:rgba(250,250,249,0.85);
+    backdrop-filter:saturate(180%) blur(20px);
+    -webkit-backdrop-filter:saturate(180%) blur(20px);
+    border-top:1px solid var(--border);
+  }
+  .nav-btn{
+    display:inline-flex;align-items:center;gap:8px;
+    padding:12px 22px;background:var(--surface);
+    border:1px solid var(--border);border-radius:100px;
+    font-size:14px;font-weight:500;color:var(--text);
+    cursor:pointer;font-family:inherit;
+    transition:all 0.18s ease;
+  }
+  .nav-btn:hover:not(:disabled){border-color:var(--border-2);background:#f4f4f2;transform:translateY(-1px)}
+  .nav-btn:disabled{opacity:0.4;cursor:not-allowed}
+  .nav-btn.next{background:var(--accent);color:white;border-color:var(--accent)}
+  .nav-btn.next:hover:not(:disabled){background:var(--accent-2);border-color:var(--accent-2);box-shadow:0 8px 24px rgba(0,0,0,0.18)}
+
+  .dots{display:flex;gap:8px}
+  .dot{
+    width:6px;height:6px;border-radius:50%;background:var(--border-2);
+    transition:all 0.4s cubic-bezier(0.4,0,0.2,1);
+  }
+  .dot.active{background:var(--accent);width:24px;border-radius:100px}
+  .dot.completed{background:var(--text-3)}
+
+  /* Hint */
+  .kbd-hint{
+    position:fixed;bottom:100px;right:28px;z-index:50;
+    font-size:11px;color:var(--text-3);letter-spacing:0.05em;
+    display:flex;gap:6px;align-items:center;pointer-events:none;
+    opacity:0.55;
+  }
+  .kbd{
+    display:inline-flex;align-items:center;justify-content:center;
+    min-width:22px;height:22px;padding:0 4px;
+    background:var(--surface);border:1px solid var(--border);
+    border-radius:6px;
+    font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text-2);
+  }
+
+  @media (max-width:640px){
+    .top-nav,.bottom-nav{padding:0 16px}
+    .slide{padding:32px 20px}
+    .form-card{padding:24px}
+    .cta-box{padding:32px 24px}
+    .kbd-hint{display:none}
+    .hero-meta{gap:20px;padding:16px 20px}
+    .hero-meta-item .value{font-size:16px}
+  }
+  @media (max-width:480px){
+    .nav-btn{padding:10px 16px;font-size:13px}
+    .bottom-nav{height:72px}
+    .slides-container{padding-bottom:72px}
+  }
+
+  /* ─── Operator Mode ─── */
+  body.op-mode .app{display:none !important}
+  body:not(.op-mode) .op-app{display:none !important}
+  body:not(.op-mode) .back-to-admin-btn{display:inline-flex !important}
+  body.op-mode .back-to-admin-btn{display:none !important}
+
+  .op-app{
+    position:fixed;top:0;left:0;right:0;bottom:0;
+    background:var(--bg);padding:32px 24px 64px;
+    overflow-y:auto;-webkit-overflow-scrolling:touch;
+  }
+  .op-app-inner{max-width:960px;margin:0 auto}
+  .op-header{
+    display:flex;align-items:center;justify-content:space-between;
+    padding-bottom:20px;border-bottom:1px solid var(--border);margin-bottom:28px;
+  }
+  .op-header .brand{font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px}
+  .op-section h2{font-size:24px;font-weight:700;letter-spacing:-0.02em;margin-bottom:8px}
+  .op-section .lead{color:var(--text-2);font-size:14px;margin-bottom:24px;line-height:1.7}
+  .op-toolbar{display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap}
+  .op-tabs{
+    display:inline-flex;gap:4px;padding:4px;
+    background:#f4f4f2;border-radius:99px;margin-bottom:18px;
+  }
+  .op-tab{
+    display:inline-flex;align-items:center;gap:8px;
+    padding:7px 16px;background:transparent;border:none;
+    border-radius:99px;font-size:13px;font-weight:500;
+    color:var(--text-2);cursor:pointer;font-family:inherit;
+    transition:all 0.18s ease;
+  }
+  .op-tab:hover{color:var(--text)}
+  .op-tab.active{background:var(--surface);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,0.08)}
+  .op-tab-count{
+    display:inline-flex;align-items:center;justify-content:center;
+    min-width:18px;height:18px;padding:0 6px;
+    background:var(--bg);border-radius:99px;
+    font-size:11px;font-weight:600;color:var(--text-3);
+  }
+  .op-tab.active .op-tab-count{background:var(--accent);color:white}
+
+  /* Sent status badge on customer card */
+  .customer-card-status{
+    display:inline-flex;align-items:center;gap:4px;
+    padding:3px 10px;border-radius:99px;
+    font-size:10.5px;font-weight:600;letter-spacing:0.04em;
+    margin-top:6px;
+  }
+  .customer-card-status.pending{background:var(--warning-bg,#fef3c7);color:var(--warning,#92400e)}
+  .customer-card-status.sent{background:var(--success-bg);color:var(--success)}
+  .customer-card-status::before{content:'';width:5px;height:5px;background:currentColor;border-radius:50%}
+
+  .toggle-sent-active{background:var(--success-bg) !important;color:var(--success) !important;border-color:var(--success-bg) !important}
+  .btn-op{
+    display:inline-flex;align-items:center;gap:8px;
+    padding:10px 16px;background:var(--surface);border:1px solid var(--border);
+    border-radius:99px;font-size:13px;font-weight:500;color:var(--text);
+    cursor:pointer;font-family:inherit;text-decoration:none;
+    transition:all 0.15s ease;
+  }
+  .btn-op:hover{border-color:var(--border-2);background:#f4f4f2;transform:translateY(-1px)}
+  .btn-op-primary{background:var(--accent);color:white;border-color:var(--accent)}
+  .btn-op-primary:hover{background:var(--accent-2);border-color:var(--accent-2);box-shadow:0 8px 20px rgba(0,0,0,0.15)}
+
+  .customer-grid{display:grid;gap:10px}
+  .customer-card{
+    background:var(--surface);border:1px solid var(--border);border-radius:14px;
+    padding:18px 20px;display:flex;align-items:center;justify-content:space-between;
+    cursor:pointer;transition:all 0.15s ease;
+  }
+  .customer-card:hover{border-color:var(--border-2);transform:translateY(-1px);box-shadow:0 4px 16px rgba(0,0,0,0.04)}
+  .customer-card-info strong{display:block;font-size:15px;font-weight:600;margin-bottom:4px}
+  .customer-card-info span{display:block;font-size:12px;color:var(--text-3)}
+  .customer-card-actions{display:flex;gap:8px}
+  .btn-icon{
+    width:32px;height:32px;background:var(--bg);
+    border:1px solid var(--border);border-radius:8px;cursor:pointer;
+    display:inline-flex;align-items:center;justify-content:center;
+    color:var(--text-2);transition:all 0.15s ease;
+  }
+  .btn-icon:hover{background:var(--surface);color:var(--text);border-color:var(--border-2)}
+  .btn-icon.danger:hover{color:#b91c1c;border-color:#fca5a5;background:#fef2f2}
+
+  .empty-op{
+    padding:48px 20px;text-align:center;
+    background:var(--surface);border:1px dashed var(--border-2);border-radius:16px;
+    color:var(--text-3);font-size:13.5px;line-height:1.8;
+  }
+
+  .detail-section{
+    background:var(--surface);border:1px solid var(--border);
+    border-radius:16px;padding:24px;margin-bottom:14px;
+  }
+  .detail-section h3{
+    font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;
+    color:var(--text-3);margin-bottom:14px;
+  }
+  .detail-name-input{
+    width:100%;padding:12px 14px;border:1px solid var(--border);border-radius:10px;
+    font-size:15px;background:var(--bg);font-family:inherit;color:var(--text);
+    transition:all 0.15s ease;
+  }
+  .detail-name-input:focus{outline:none;border-color:var(--accent);background:white;box-shadow:0 0 0 3px rgba(10,10,10,0.06)}
+  .detail-task-row{
+    display:grid;grid-template-columns:1.1fr 1fr;gap:16px;align-items:center;
+    padding:14px 0;border-bottom:1px dashed var(--border);
+  }
+  .detail-task-row:first-child{padding-top:0}
+  .detail-task-row:last-child{border-bottom:0;padding-bottom:0}
+  .detail-task-name{font-size:14px;font-weight:500;line-height:1.5}
+  .detail-task-input{
+    width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:8px;
+    font-size:12.5px;font-family:'JetBrains Mono',monospace;background:white;
+    transition:all 0.15s ease;
+  }
+  .detail-task-input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(10,10,10,0.06)}
+  .detail-task-note{
+    display:inline-block;padding:6px 12px;background:#f7f7f5;
+    border:1px solid var(--border);border-radius:7px;
+    font-size:12px;color:var(--text-2);font-weight:500;
+  }
+  .detail-task-note small{color:var(--text-3);font-weight:400;margin-left:4px}
+
+  .detail-preview-textarea{
+    width:100%;min-height:340px;padding:18px 20px;
+    border:1px solid var(--border);border-radius:12px;background:var(--bg);
+    font-family:'Inter','Noto Sans JP',sans-serif;
+    font-size:13.5px;line-height:1.85;color:var(--text);
+    resize:vertical;font-feature-settings:'palt';
+  }
+  .detail-preview-textarea:focus{outline:none;border-color:var(--accent)}
+  .detail-preview-actions{display:flex;gap:10px;align-items:center;margin-top:14px}
+  .copy-feedback-text{font-size:12px;color:#047857;font-weight:500;opacity:0;transition:opacity 0.2s ease}
+  .copy-feedback-text.show{opacity:1}
+
+  .back-to-admin-btn{
+    position:fixed;bottom:104px;left:20px;z-index:60;
+    padding:9px 14px;background:var(--surface);
+    border:1px solid var(--border-2);border-radius:99px;
+    font-size:12px;font-weight:500;color:var(--text);cursor:pointer;
+    font-family:inherit;display:none;align-items:center;gap:6px;
+    box-shadow:0 8px 24px rgba(0,0,0,0.08);
+    transition:all 0.15s ease;
+  }
+  .back-to-admin-btn:hover{transform:translateY(-1px);box-shadow:0 12px 28px rgba(0,0,0,0.12)}
+
+  @media (max-width:640px){
+    .detail-task-row{grid-template-columns:1fr;gap:8px}
+    .op-app{padding:24px 16px 48px}
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <header class="top-nav">
+    <div class="brand"><span class="brand-dot"></span>下準備診断</div>
+    <div class="step-indicator mono"><strong id="curr-step">01</strong> / <span id="total-step">07</span></div>
+  </header>
+
+  <div class="slides-container" id="container">
+    <div class="slides-track" id="track">
+
+      <section class="slide is-active" data-slide="0">
+        <div class="slide-inner">
+          <h1 class="hero-title">物販・IPOの<br /><em>下準備診断</em></h1>
+          <p class="hero-lead">物販・IPO抽選などで必要なクレカや証券口座の診断になります。</p>
+          <div class="hero-meta">
+            <div class="hero-meta-item"><span class="label">所要時間</span><span class="value">約2分</span></div>
+            <div class="hero-meta-item"><span class="label">設問</span><span class="value mono">14項目</span></div>
+            <div class="hero-meta-item"><span class="label">受け取り</span><span class="value">無料</span></div>
+          </div>
+          <div class="hero-name-field">
+            <label for="hero-name-input">お客様のお名前</label>
+            <input type="text" id="hero-name-input" placeholder="例: 田中 様" autocomplete="off" />
+          </div>
+          <button class="cta-primary" data-action="next">
+            診断を始める
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          </button>
+        </div>
+      </section>
+
+      <section class="slide" data-slide="1">
+        <div class="slide-inner">
+          <div class="section-num mono">SECTION 01</div>
+          <h2 class="section-title">おすすめクレジットカード一覧</h2>
+          <p class="section-desc">仕入れ枠の確保・経費管理・ポイント還元に使えるおすすめのクレカです。<strong>発行サポートを代わりに進めます。</strong></p>
+          <div class="check-list">
+            <label class="check-item check-item-all"><input type="checkbox" /><span class="check-box"></span><span class="check-label">全て持っていない(下を一括チェック)</span></label>
+            <label class="check-item"><input type="checkbox" data-cat="card" data-task="アメックス・ビジネスゴールドを発行する(年会費 49,500円)" /><span class="check-box"></span><span class="check-label">アメックス・ビジネスゴールド(年会費 49,500円)を持っていない</span></label>
+            <label class="check-item"><input type="checkbox" data-cat="card" data-task="セゾン・アメックス・プラチナ・ビジネスを発行する(年会費 22,000円・初年度無料)" /><span class="check-box"></span><span class="check-label">セゾン・アメックス・プラチナ・ビジネス(年会費 22,000円・初年度無料)を持っていない</span></label>
+            <label class="check-item"><input type="checkbox" data-cat="card" data-task="三井住友カード ビジネスオーナーズゴールドを発行する(年会費 5,500円)" /><span class="check-box"></span><span class="check-label">三井住友カード ビジネスオーナーズゴールド(年会費 5,500円・条件で永年無料化)を持っていない</span></label>
+            <label class="check-item"><input type="checkbox" data-cat="card" data-task="JCBカードWを発行する" /><span class="check-box"></span><span class="check-label">JCBカードW(39歳以下限定・還元率1%以上・年会費永年無料)を持っていない</span></label>
+            <label class="check-item"><input type="checkbox" data-cat="card" data-task="三井住友カード(NL)を発行する" /><span class="check-box"></span><span class="check-label">三井住友カード(NL)(年会費永年無料・対象店で最大7%還元)を持っていない</span></label>
+          </div>
+        </div>
+      </section>
+
+      <section class="slide" data-slide="2">
+        <div class="slide-inner">
+          <div class="section-num mono">SECTION 02</div>
+          <h2 class="section-title">IPO投資用 証券口座</h2>
+          <p class="section-desc">IPO(新規上場株)の<strong>当選確率を上げるための主要証券口座</strong>です。複数社を揃えるほど当選チャンスが増えます。口座開設サポートを代わりに進めます。</p>
+          <div class="check-list">
+            <label class="check-item check-item-all"><input type="checkbox" /><span class="check-box"></span><span class="check-label">全て持っていない(下を一括チェック)</span></label>
+            <label class="check-item"><input type="checkbox" data-cat="ipo" data-task="SBI証券の口座を開設する" /><span class="check-box"></span><span class="check-label">SBI証券の口座を持っていない(IPO取扱数No.1)</span></label>
+            <label class="check-item"><input type="checkbox" data-cat="ipo" data-task="楽天証券の口座を開設する" /><span class="check-box"></span><span class="check-label">楽天証券の口座を持っていない(楽天経済圏連携)</span></label>
+            <label class="check-item"><input type="checkbox" data-cat="ipo" data-task="マネックス証券の口座を開設する" /><span class="check-box"></span><span class="check-label">マネックス証券の口座を持っていない(完全平等抽選)</span></label>
+            <label class="check-item"><input type="checkbox" data-cat="ipo" data-task="三菱UFJ eスマート証券の口座を開設する" /><span class="check-box"></span><span class="check-label">三菱UFJ eスマート証券の口座を持っていない(旧auカブコム)</span></label>
+            <label class="check-item"><input type="checkbox" data-cat="ipo" data-task="松井証券の口座を開設する" /><span class="check-box"></span><span class="check-label">松井証券の口座を持っていない</span></label>
+            <label class="check-item"><input type="checkbox" data-cat="ipo" data-task="岡三オンラインの口座を開設する" /><span class="check-box"></span><span class="check-label">岡三オンラインの口座を持っていない(前受金不要)</span></label>
+          </div>
+        </div>
+      </section>
+
+      <section class="slide" data-slide="3">
+        <div class="slide-inner">
+          <div class="section-num mono">SECTION 03</div>
+          <h2 class="section-title">固定費の見直し</h2>
+          <p class="section-desc">MNP・Wi-Fi切替・保険の見直しで<strong>月数千〜数万円の固定費が浮きます</strong>。比較・乗換サポートを代わりに進めます。</p>
+          <div class="check-list">
+            <label class="check-item"><input type="checkbox" data-cat="fix" data-task="携帯のMNP(乗り換え)を行う" /><span class="check-box"></span><span class="check-label">MNPをここ半年していない</span></label>
+            <label class="check-item"><input type="checkbox" data-cat="fix" data-task="Wi-Fi / 光回線を切り替える" /><span class="check-box"></span><span class="check-label">Wi-Fiの切り替えを半年以上していない</span></label>
+            <label class="check-item" id="insurance-check"><input type="checkbox" data-cat="fix" data-task="保険(医療・生命)に加入する" /><span class="check-box"></span><span class="check-label">保険に入っていない</span></label>
+          </div>
+        </div>
+      </section>
+
+      <section class="slide" data-slide="4">
+        <div class="slide-inner">
+          <div class="section-num mono">YOUR TASKS</div>
+          <h2 class="section-title">あなたのタスクリスト</h2>
+          <p class="section-desc" id="result-summary">あなたの状況に合わせて、タスクを作成しました。上から順に申し込み可能です。</p>
+          <div class="priority-list" id="priority-list"></div>
+          <div class="wait-notice">
+            <div class="wait-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </div>
+            <div class="wait-content">
+              <strong>担当者から専用のリンクを48時間以内にお送りします</strong>
+              <span>しばらくお待ちください</span>
+            </div>
+          </div>
+          <button class="save-result-btn" id="save-result-btn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+            管理画面に保存する
+          </button>
+        </div>
+      </section>
+
+    </div>
+  </div>
+
+  <footer class="bottom-nav" id="bottom-nav">
+    <button class="nav-btn back" id="back" disabled>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      戻る
+    </button>
+    <div class="dots" id="dots"></div>
+    <button class="nav-btn next" id="next">
+      次へ
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+    </button>
+  </footer>
+
+  <div class="kbd-hint"><span class="kbd">←</span><span class="kbd">→</span> でスライド移動</div>
+
+</div>
+
+<!-- ─── Operator Dashboard ─── -->
+<div class="op-app" id="op-app" hidden>
+  <div class="op-app-inner">
+    <header class="op-header">
+      <div class="brand"><span class="brand-dot"></span>担当者ダッシュボード</div>
+      <a class="btn-op" href="?" target="_blank" rel="noopener">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        顧客モードを別タブで開く
+      </a>
+    </header>
+
+    <!-- List View -->
+    <section class="op-section" id="op-list-view">
+      <h2>お客様一覧</h2>
+      <p class="lead">登録済みのお客様情報がここに表示されます。各お客様ごとに診断結果・URL・LINEメッセージを保存できます。</p>
+      <div class="op-tabs">
+        <button class="op-tab active" data-tab="pending"><span>未送付</span><span class="op-tab-count" id="tab-count-pending">0</span></button>
+        <button class="op-tab" data-tab="sent"><span>送付済み</span><span class="op-tab-count" id="tab-count-sent">0</span></button>
+      </div>
+      <div class="op-toolbar">
+        <button class="btn-op btn-op-primary" id="new-customer-btn">+ 新規お客様を追加</button>
+      </div>
+      <div class="customer-grid" id="customer-list-grid"></div>
+    </section>
+
+    <!-- Detail View -->
+    <section class="op-section" id="op-detail-view" hidden>
+      <button class="btn-op" id="back-to-list-btn">← お客様一覧に戻る</button>
+      <div style="height:20px"></div>
+
+      <div class="detail-section">
+        <h3>お客様情報</h3>
+        <input type="text" class="detail-name-input" id="detail-customer-name" placeholder="お客様のお名前(例: 田中 様)" />
+      </div>
+
+      <div class="detail-section">
+        <h3>タスク一覧 / URL設定</h3>
+        <div id="detail-tasks-list"></div>
+        <div style="margin-top:16px">
+          <button class="btn-op" id="start-diagnosis-btn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            このお客様の診断を開始(または再診断)
+          </button>
+        </div>
+      </div>
+
+      <div class="detail-section">
+        <h3>LINEメッセージプレビュー</h3>
+        <textarea class="detail-preview-textarea" id="detail-preview" placeholder="タスクが揃うとメッセージが自動生成されます"></textarea>
+        <div class="detail-preview-actions">
+          <button class="btn-op btn-op-primary" id="detail-copy-btn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            テキストをコピー
+          </button>
+          <span class="copy-feedback-text" id="detail-copy-feedback">✓ コピーしました</span>
+        </div>
+        <div style="margin-top:16px;padding-top:16px;border-top:1px dashed var(--border)">
+          <button class="btn-op" id="toggle-sent-btn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            <span id="toggle-sent-label">送付済みにする</span>
+          </button>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<!-- 顧客モード時、管理画面へ戻るボタン(op session のみ表示) -->
+<button class="back-to-admin-btn" id="back-to-admin-btn" data-visible="false">
+  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+  管理画面
+</button>
+
+<script>
+(function(){
+  // ─────────────────────────────────────────────────────────────
+  // ▼ アフィリエイトリンク設定エリア
+  //    各タスクに対応するアフィリエイト URL をここに入れてください。
+  //    キー(左側)はタスク名と完全一致させる必要があります。
+  // ─────────────────────────────────────────────────────────────
+  const AFFILIATE_LINKS = {
+    // ─ クレジットカード ─
+    'アメックス・ビジネスゴールドを発行する(年会費 49,500円)': '',
+    'セゾン・アメックス・プラチナ・ビジネスを発行する(年会費 22,000円・初年度無料)': '',
+    '三井住友カード ビジネスオーナーズゴールドを発行する(年会費 5,500円)': '',
+    'JCBカードWを発行する': '',
+    '三井住友カード(NL)を発行する': '',
+    // ─ 証券口座 ─
+    'SBI証券の口座を開設する': '',
+    '楽天証券の口座を開設する': '',
+    'マネックス証券の口座を開設する': '',
+    '三菱UFJ eスマート証券の口座を開設する': '',
+    '松井証券の口座を開設する': '',
+    '岡三オンラインの口座を開設する': '',
+    // ─ 固定費 ─
+    '携帯のMNP(乗り換え)を行う': '',
+    'Wi-Fi / 光回線を切り替える': '',
+    '保険(医療・生命)に加入する': '',
+    // ─ 保険見直し ─
+    '現在の保険を見直す': '',
+  };
+  // ─────────────────────────────────────────────────────────────
+
+  const track = document.getElementById('track');
+  const slides = track.querySelectorAll('.slide');
+  const totalSteps = slides.length - 1; // exclude result from count
+  const resultIdx = totalSteps;
+  let current = 0;
+
+  const dotsEl = document.getElementById('dots');
+  for (let i = 0; i < totalSteps; i++) {
+    const d = document.createElement('div');
+    d.className = 'dot' + (i === 0 ? ' active' : '');
+    dotsEl.appendChild(d);
+  }
+  document.getElementById('total-step').textContent = String(totalSteps).padStart(2, '0');
+
+  function goTo(idx){
+    if (idx < 0 || idx > resultIdx) return;
+    current = idx;
+    track.style.transform = `translateX(-${idx * 100}%)`;
+    slides.forEach((s, i) => s.classList.toggle('is-active', i === idx));
+
+    const stepDisplay = idx >= totalSteps ? totalSteps : idx + 1;
+    document.getElementById('curr-step').textContent = String(stepDisplay).padStart(2, '0');
+
+    document.querySelectorAll('.dot').forEach((d, i) => {
+      d.classList.toggle('active', i === idx && idx < totalSteps);
+      d.classList.toggle('completed', i < idx && idx < totalSteps);
+    });
+
+    document.getElementById('back').disabled = idx === 0;
+    const bottomNav = document.getElementById('bottom-nav');
+    if (idx === resultIdx) {
+      bottomNav.style.display = 'none';
+      buildResult();
+    } else {
+      bottomNav.style.display = '';
+    }
+  }
+
+  document.getElementById('next').addEventListener('click', () => goTo(current + 1));
+  document.getElementById('back').addEventListener('click', () => goTo(current - 1));
+  document.querySelectorAll('[data-action="next"]').forEach(b => b.addEventListener('click', () => goTo(current + 1)));
+
+  // checkbox
+  document.querySelectorAll('.check-item').forEach(item => {
+    const input = item.querySelector('input');
+    input.addEventListener('change', () => item.classList.toggle('checked', input.checked));
+  });
+
+  // master checkbox(「全て持っていない」)の一括同期
+  document.querySelectorAll('.check-item-all').forEach(master => {
+    const masterInput = master.querySelector('input');
+    const slide = master.closest('.slide');
+    const childItems = slide.querySelectorAll('.check-item:not(.check-item-all)');
+
+    masterInput.addEventListener('change', () => {
+      childItems.forEach(child => {
+        const childInput = child.querySelector('input');
+        childInput.checked = masterInput.checked;
+        child.classList.toggle('checked', masterInput.checked);
+      });
+    });
+
+    childItems.forEach(child => {
+      const childInput = child.querySelector('input');
+      childInput.addEventListener('change', () => {
+        const allChecked = Array.from(childItems).every(c => c.querySelector('input').checked);
+        masterInput.checked = allChecked;
+        master.classList.toggle('checked', allChecked);
+      });
+    });
+  });
+
+  // keyboard
+  document.addEventListener('keydown', e => {
+    // テキスト入力欄でのキー操作は無視(チェックボックス・ボタンは許可)
+    if (e.target.matches('input[type="text"], input[type="email"], input[type="url"], input[type="tel"], input[type="password"], input[type="search"], textarea, [contenteditable="true"]')) {
+      if (e.key === 'Escape') e.target.blur();
+      return;
+    }
+    if (e.key === 'ArrowRight') goTo(current + 1);
+    if (e.key === 'ArrowLeft') goTo(current - 1);
+  });
+
+  // touch swipe
+  let sx = 0, sy = 0, dragging = false;
+  const container = document.getElementById('container');
+  container.addEventListener('touchstart', e => {
+    sx = e.touches[0].clientX; sy = e.touches[0].clientY; dragging = true;
+  }, { passive: true });
+  container.addEventListener('touchend', e => {
+    if (!dragging) return;
+    dragging = false;
+    const dx = sx - e.changedTouches[0].clientX;
+    const dy = Math.abs(sy - e.changedTouches[0].clientY);
+    if (Math.abs(dx) > 60 && Math.abs(dx) > dy) {
+      goTo(current + (dx > 0 ? 1 : -1));
+    }
+  }, { passive: true });
+
+  function buildResult(){
+    const checked = Array.from(document.querySelectorAll('.check-item:not(.check-item-all) input:checked'));
+    const order = { card: 1, ipo: 2, fix: 3, review: 4 };
+    const taskObjs = checked.map(i => ({ task: i.dataset.task, cat: i.dataset.cat }));
+
+    // 保険ロジック: 「保険に入っていない」がチェックされてない場合は自動的に「見直し」タスクを最後に追加
+    const insuranceJoinChecked = checked.some(i => i.dataset.task === '保険(医療・生命)に加入する');
+    if (!insuranceJoinChecked) {
+      taskObjs.push({ task: '現在の保険を見直す', cat: 'review' });
+    }
+
+    const sortedTasks = taskObjs.sort((a, b) => (order[a.cat] || 99) - (order[b.cat] || 99));
+    const total = sortedTasks.length;
+
+    // 担当者用テンプレートツールから読み込めるよう、結果を localStorage に保存
+    try {
+      localStorage.setItem('latest_diagnosis_tasks', JSON.stringify({
+        tasks: sortedTasks.map(t => t.task),
+        ts: Date.now(),
+      }));
+    } catch(_) {}
+
+    // 担当者モード(op session) かつ アクティブ顧客あり → そのお客様のタスクを自動更新
+    // それ以外(URL直開きでの単発診断)は何もしない(明示的な「保存する」ボタンを使う)
+    if (typeof appState !== 'undefined' && typeof isOpSession !== 'undefined' && isOpSession && appState.activeCustomerId && appState.customers[appState.activeCustomerId]) {
+      appState.customers[appState.activeCustomerId].tasks = sortedTasks.map(t => t.task);
+      appState.customers[appState.activeCustomerId].updatedAt = Date.now();
+      try { localStorage.setItem('app_state_v1', JSON.stringify(appState)); } catch(_) {}
+    }
+
+    document.getElementById('result-summary').textContent = total > 0
+      ? `あなたの状況に合わせて、${total} 件のタスクを作成しました。上から順に申し込み可能です。`
+      : 'タスクがありませんでした。';
+
+    const listEl = document.getElementById('priority-list');
+    if (sortedTasks.length === 0) {
+      listEl.innerHTML = '<div style="padding:32px;text-align:center;color:#8a8a8a;font-size:14px;">タスクがありません。</div>';
+    } else {
+      listEl.innerHTML = sortedTasks.map((s, i) => {
+        const link = AFFILIATE_LINKS[s.task] || '';
+        const statusHtml = link
+          ? `<a class="priority-arrow" href="${link}" target="_blank" rel="noopener noreferrer">申し込む <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></a>`
+          : `<span class="pending-badge">準備中</span>`;
+        return `
+          <div class="priority-item" data-task="${s.task}">
+            <div class="priority-num">${i+1}</div>
+            <div class="priority-text"><strong>${s.task}</strong></div>
+            ${statusHtml}
+            <label class="task-include" title="チェックを外すと「やらない」として除外されます">
+              <input type="checkbox" class="task-include-input" data-task="${s.task}" checked />
+              <span class="task-include-box"></span>
+            </label>
+          </div>`;
+      }).join('');
+
+      // やる/やらない チェックの動作 + 管理画面側にも反映
+      listEl.querySelectorAll('.task-include-input').forEach(input => {
+        input.addEventListener('change', () => {
+          const item = input.closest('.priority-item');
+          item.classList.toggle('excluded', !input.checked);
+          // アクティブな顧客があれば、そのタスクリストを更新
+          if (appState && appState.activeCustomerId && appState.customers[appState.activeCustomerId]) {
+            const c = appState.customers[appState.activeCustomerId];
+            const activeTasks = Array.from(listEl.querySelectorAll('.task-include-input:checked'))
+              .map(i => i.dataset.task);
+            c.tasks = activeTasks;
+            c.updatedAt = Date.now();
+            saveAppState();
+          }
+        });
+      });
+    }
+
+  }
+
+  // ─── Operator Mode ───────────────────────────────────────────────
+  const APP_STATE_KEY = 'app_state_v1';
+  const opModeRequested = new URLSearchParams(location.search).has('op');
+  if (opModeRequested) sessionStorage.setItem('opSession', '1');
+  const isOpSession = sessionStorage.getItem('opSession') === '1';
+
+  let appState;
+  try { appState = JSON.parse(localStorage.getItem(APP_STATE_KEY)) || { customers: {}, activeCustomerId: null }; }
+  catch(_) { appState = { customers: {}, activeCustomerId: null }; }
+
+  const TASKS_META = {
+    '携帯のMNP(乗り換え)を行う': { note: '担当者からの詳しい説明' },
+    'Wi-Fi / 光回線を切り替える': { note: '担当者からの詳しい説明' },
+    '保険(医療・生命)に加入する': { note: '担当者からの詳しい説明' },
+    '現在の保険を見直す': { note: '担当者からの詳しい説明' },
+  };
+  const TASK_CAT = {
+    'アメックス・ビジネスゴールドを発行する(年会費 49,500円)': 'card',
+    'セゾン・アメックス・プラチナ・ビジネスを発行する(年会費 22,000円・初年度無料)': 'card',
+    '三井住友カード ビジネスオーナーズゴールドを発行する(年会費 5,500円)': 'card',
+    'JCBカードWを発行する': 'card',
+    '三井住友カード(NL)を発行する': 'card',
+    'SBI証券の口座を開設する': 'ipo',
+    '楽天証券の口座を開設する': 'ipo',
+    'マネックス証券の口座を開設する': 'ipo',
+    '三菱UFJ eスマート証券の口座を開設する': 'ipo',
+    '松井証券の口座を開設する': 'ipo',
+    '岡三オンラインの口座を開設する': 'ipo',
+    '携帯のMNP(乗り換え)を行う': 'fix',
+    'Wi-Fi / 光回線を切り替える': 'fix',
+    '保険(医療・生命)に加入する': 'fix',
+    '現在の保険を見直す': 'review',
+  };
+  const CAT_LABELS = {
+    card: 'クレジットカード',
+    ipo:  '証券口座(IPO抽選)',
+    fix:  '固定費の見直し',
+    review: '保険',
+  };
+
+  function saveAppState() {
+    try { localStorage.setItem(APP_STATE_KEY, JSON.stringify(appState)); } catch(_) {}
+  }
+  function createCustomer(name) {
+    const id = 'c_' + Math.random().toString(36).slice(2, 10);
+    appState.customers[id] = {
+      id, name: name.trim(),
+      tasks: [], urls: {},
+      createdAt: Date.now(), updatedAt: Date.now(),
+    };
+    appState.activeCustomerId = id;
+    saveAppState();
+    return id;
+  }
+  function deleteCustomerById(id) {
+    delete appState.customers[id];
+    if (appState.activeCustomerId === id) appState.activeCustomerId = null;
+    saveAppState();
+  }
+  function fmtDate(ts) {
+    const d = new Date(ts);
+    return `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+  }
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  const VIEW = { CUSTOMER: 'customer', OP_LIST: 'op-list', OP_DETAIL: 'op-detail' };
+  function setOpView(v) {
+    document.body.classList.toggle('op-mode', v !== VIEW.CUSTOMER);
+    document.getElementById('op-app').hidden = (v === VIEW.CUSTOMER);
+    document.getElementById('op-list-view').hidden = (v !== VIEW.OP_LIST);
+    document.getElementById('op-detail-view').hidden = (v !== VIEW.OP_DETAIL);
+    const backBtn = document.getElementById('back-to-admin-btn');
+    backBtn.setAttribute('data-visible', (v === VIEW.CUSTOMER && isOpSession && appState.activeCustomerId) ? 'true' : 'false');
+    if (v === VIEW.OP_LIST) renderCustomerList();
+    if (v === VIEW.OP_DETAIL) renderCustomerDetail();
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }
+
+  let currentTab = 'pending';
+
+  function renderCustomerList() {
+    const gridEl = document.getElementById('customer-list-grid');
+    const all = Object.values(appState.customers);
+    const pending = all.filter(c => c.status !== 'sent');
+    const sent = all.filter(c => c.status === 'sent');
+    document.getElementById('tab-count-pending').textContent = pending.length;
+    document.getElementById('tab-count-sent').textContent = sent.length;
+
+    const customers = (currentTab === 'sent' ? sent : pending).sort((a,b) => b.updatedAt - a.updatedAt);
+    if (customers.length === 0) {
+      const empty = currentTab === 'sent'
+        ? 'まだ送付済みのお客様はいません。'
+        : 'お客様がまだ登録されていません。<br>「+ 新規お客様を追加」から始めてください。';
+      gridEl.innerHTML = `<div class="empty-op">${empty}</div>`;
+      return;
+    }
+    gridEl.innerHTML = customers.map(c => `
+      <div class="customer-card" data-action="open" data-id="${c.id}">
+        <div class="customer-card-info">
+          <strong>${escapeHtml(c.name) || '(名前未設定)'}</strong>
+          <span>${c.tasks.length} 件のタスク &middot; 最終更新 ${fmtDate(c.updatedAt)}</span>
+          ${c.status === 'sent'
+            ? '<span class="customer-card-status sent">送付済み</span>'
+            : '<span class="customer-card-status pending">未送付</span>'}
+        </div>
+        <div class="customer-card-actions">
+          <button class="btn-icon danger" data-action="delete" data-id="${c.id}" title="削除">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+          </button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function renderCustomerDetail() {
+    const c = appState.customers[appState.activeCustomerId];
+    if (!c) { setOpView(VIEW.OP_LIST); return; }
+    document.getElementById('detail-customer-name').value = c.name || '';
+
+    // 送付済みトグルボタンの状態反映
+    const toggleBtn = document.getElementById('toggle-sent-btn');
+    const toggleLabel = document.getElementById('toggle-sent-label');
+    if (c.status === 'sent') {
+      toggleBtn.classList.add('toggle-sent-active');
+      toggleLabel.textContent = '✓ 送付済み(クリックで未送付に戻す)';
+    } else {
+      toggleBtn.classList.remove('toggle-sent-active');
+      toggleLabel.textContent = '送付済みにする';
+    }
+    const tasksEl = document.getElementById('detail-tasks-list');
+    if (!c.tasks || c.tasks.length === 0) {
+      tasksEl.innerHTML = `<div class="empty-op">まだタスクがありません。<br>下の「このお客様の診断を開始」から進めてください。</div>`;
+    } else {
+      tasksEl.innerHTML = c.tasks.map(taskName => {
+        const meta = TASKS_META[taskName];
+        if (meta && meta.note) {
+          return `<div class="detail-task-row"><div class="detail-task-name">${escapeHtml(taskName)}</div><div class="detail-task-note">${escapeHtml(meta.note)}<small>(URL不要)</small></div></div>`;
+        }
+        return `<div class="detail-task-row"><div class="detail-task-name">${escapeHtml(taskName)}</div><input type="url" class="detail-task-input" data-task="${escapeHtml(taskName)}" value="${escapeHtml(c.urls[taskName] || '')}" placeholder="https://" /></div>`;
+      }).join('');
+      tasksEl.querySelectorAll('.detail-task-input').forEach(input => {
+        input.addEventListener('input', () => {
+          c.urls[input.dataset.task] = input.value.trim();
+          c.updatedAt = Date.now();
+          saveAppState();
+          updateDetailPreview();
+        });
+        input.addEventListener('focus', () => input.select());
+      });
+    }
+    updateDetailPreview();
+  }
+
+  function generateMessageForCustomer(c) {
+    if (!c || !c.tasks || c.tasks.length === 0) return '';
+    const greeting = c.name ? `${c.name}さん` : 'お客様';
+    const lines = [];
+    lines.push(greeting);
+    lines.push('');
+    lines.push('先日はお時間をいただきありがとうございました。');
+    lines.push('診断結果に基づく専用リンクをお送りします。');
+    lines.push('上から順番にお進めください。');
+    lines.push('');
+    const byCat = {};
+    c.tasks.forEach(t => {
+      const cat = TASK_CAT[t] || 'other';
+      (byCat[cat] = byCat[cat] || []).push(t);
+    });
+    const order = ['card', 'ipo', 'fix', 'review'];
+    const SCHEDULE_LINE = '   ご都合のよい日程候補を3つほどお知らせください。';
+    let n = 1;
+    order.forEach(cat => {
+      if (!byCat[cat]) return;
+      lines.push(`▼ ${CAT_LABELS[cat] || cat}`);
+
+      const taskList = byCat[cat].slice();
+
+      // 固定費の MNP + Wi-Fi が両方ある場合は結合
+      if (cat === 'fix') {
+        const mnpTask  = '携帯のMNP(乗り換え)を行う';
+        const wifiTask = 'Wi-Fi / 光回線を切り替える';
+        const mnpIdx  = taskList.indexOf(mnpTask);
+        const wifiIdx = taskList.indexOf(wifiTask);
+        if (mnpIdx !== -1 && wifiIdx !== -1) {
+          lines.push(`${n}. 携帯のMNP / Wi-Fi切替について`);
+          lines.push(`   → 担当者からの詳しい説明`);
+          lines.push(SCHEDULE_LINE);
+          n++;
+          // 結合済みのものを除外
+          taskList.splice(Math.max(mnpIdx, wifiIdx), 1);
+          taskList.splice(Math.min(mnpIdx, wifiIdx), 1);
+        }
+      }
+
+      taskList.forEach(taskName => {
+        lines.push(`${n}. ${taskName}`);
+        const meta = TASKS_META[taskName];
+        if (meta && meta.note) {
+          lines.push(`   → ${meta.note}`);
+          lines.push(SCHEDULE_LINE);
+        } else if (c.urls[taskName]) {
+          lines.push(`   ${c.urls[taskName]}`);
+        } else {
+          lines.push(`   (URL未設定)`);
+        }
+        n++;
+      });
+      lines.push('');
+    });
+    lines.push('ご不明な点があればいつでもご連絡ください。');
+    lines.push('引き続きどうぞよろしくお願いいたします。');
+    return lines.join('\n');
+  }
+
+  function updateDetailPreview() {
+    document.getElementById('detail-preview').value = generateMessageForCustomer(appState.customers[appState.activeCustomerId]);
+  }
+
+  // Event handlers
+  document.getElementById('new-customer-btn').addEventListener('click', () => {
+    const name = prompt('お客様のお名前を入力してください:');
+    if (!name || !name.trim()) return;
+    createCustomer(name.trim());
+    setOpView(VIEW.OP_DETAIL);
+  });
+
+  document.getElementById('customer-list-grid').addEventListener('click', (e) => {
+    const actionEl = e.target.closest('[data-action]');
+    if (!actionEl) return;
+    const action = actionEl.dataset.action;
+    const id = actionEl.dataset.id;
+    if (action === 'delete') {
+      e.stopPropagation();
+      if (!confirm('このお客様を削除しますか?(URL・タスクすべて消去されます)')) return;
+      deleteCustomerById(id);
+      renderCustomerList();
+    } else if (action === 'open') {
+      appState.activeCustomerId = id;
+      saveAppState();
+      setOpView(VIEW.OP_DETAIL);
+    }
+  });
+
+  document.getElementById('back-to-list-btn').addEventListener('click', () => setOpView(VIEW.OP_LIST));
+
+  document.getElementById('detail-customer-name').addEventListener('input', (e) => {
+    const c = appState.customers[appState.activeCustomerId];
+    if (!c) return;
+    c.name = e.target.value;
+    c.updatedAt = Date.now();
+    saveAppState();
+    updateDetailPreview();
+  });
+
+  document.getElementById('start-diagnosis-btn').addEventListener('click', () => {
+    if (!confirm('診断画面に切り替えます。お客様と画面共有しながら進めてください。よろしいですか?')) return;
+    document.querySelectorAll('.check-item input[type="checkbox"]').forEach(input => {
+      input.checked = false;
+      input.parentElement.classList.remove('checked');
+    });
+    // 現在のアクティブ顧客名をヒーローページの入力欄に反映
+    const c = appState.customers[appState.activeCustomerId];
+    const heroInput = document.getElementById('hero-name-input');
+    if (heroInput) heroInput.value = (c && c.name) || '';
+    setOpView(VIEW.CUSTOMER);
+    goTo(0);
+  });
+
+  // 「管理画面に保存する」ボタン
+  const saveResultBtn = document.getElementById('save-result-btn');
+  if (saveResultBtn) {
+    const originalHtml = saveResultBtn.innerHTML;
+    saveResultBtn.addEventListener('click', () => {
+      const heroInput = document.getElementById('hero-name-input');
+      const name = (heroInput?.value || '').trim();
+      if (!name) {
+        alert('最初のページで「お客様のお名前」を入力してください');
+        return;
+      }
+      // チェックされているタスクだけ収集
+      const tasks = Array.from(document.querySelectorAll('.task-include-input:checked'))
+        .map(i => i.dataset.task);
+
+      let cust;
+      // op session(管理画面経由) かつ アクティブ顧客あり → 更新
+      // それ以外(URL直開きの単発診断)→ 新規作成
+      if (isOpSession && appState.activeCustomerId && appState.customers[appState.activeCustomerId]) {
+        cust = appState.customers[appState.activeCustomerId];
+        cust.name = name;
+        cust.tasks = tasks;
+        cust.updatedAt = Date.now();
+      } else {
+        createCustomer(name);
+        cust = appState.customers[appState.activeCustomerId];
+        cust.tasks = tasks;
+        cust.updatedAt = Date.now();
+      }
+      saveAppState();
+
+      saveResultBtn.disabled = true;
+      saveResultBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> 保存しました';
+      setTimeout(() => {
+        saveResultBtn.disabled = false;
+        saveResultBtn.innerHTML = originalHtml;
+      }, 2500);
+    });
+  }
+
+  document.getElementById('back-to-admin-btn').addEventListener('click', () => {
+    setOpView(appState.activeCustomerId ? VIEW.OP_DETAIL : VIEW.OP_LIST);
+  });
+
+  // タブ切替
+  document.querySelectorAll('.op-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      currentTab = tab.dataset.tab;
+      document.querySelectorAll('.op-tab').forEach(t => t.classList.toggle('active', t === tab));
+      renderCustomerList();
+    });
+  });
+
+  // 送付済みトグル
+  document.getElementById('toggle-sent-btn').addEventListener('click', () => {
+    const c = appState.customers[appState.activeCustomerId];
+    if (!c) return;
+    c.status = (c.status === 'sent') ? 'pending' : 'sent';
+    c.updatedAt = Date.now();
+    saveAppState();
+    renderCustomerDetail();
+  });
+
+  document.getElementById('detail-copy-btn').addEventListener('click', async () => {
+    const text = document.getElementById('detail-preview').value;
+    if (!text) { alert('コピーするテキストがありません。タスクを設定してください。'); return; }
+    try { await navigator.clipboard.writeText(text); }
+    catch(_) {
+      const ta = document.getElementById('detail-preview');
+      ta.select();
+      document.execCommand('copy');
+    }
+    const fb = document.getElementById('detail-copy-feedback');
+    fb.classList.add('show');
+    setTimeout(() => fb.classList.remove('show'), 2000);
+  });
+
+  // Initial view
+  setOpView(opModeRequested ? VIEW.OP_LIST : VIEW.CUSTOMER);
+})();
+</script>
+
+</body>
+</html>
