@@ -754,6 +754,7 @@
   管理画面
 </button>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 (function(){
   // ─────────────────────────────────────────────────────────────
@@ -908,9 +909,11 @@
     // 担当者モード(op session) かつ アクティブ顧客あり → そのお客様のタスクを自動更新
     // それ以外(URL直開きでの単発診断)は何もしない(明示的な「保存する」ボタンを使う)
     if (typeof appState !== 'undefined' && typeof isOpSession !== 'undefined' && isOpSession && appState.activeCustomerId && appState.customers[appState.activeCustomerId]) {
-      appState.customers[appState.activeCustomerId].tasks = sortedTasks.map(t => t.task);
-      appState.customers[appState.activeCustomerId].updatedAt = Date.now();
+      const cust = appState.customers[appState.activeCustomerId];
+      cust.tasks = sortedTasks.map(t => t.task);
+      cust.updatedAt = Date.now();
       try { localStorage.setItem('app_state_v1', JSON.stringify(appState)); } catch(_) {}
+      if (typeof syncCustomerToCloud === 'function') syncCustomerToCloud(cust);
     }
 
     document.getElementById('result-summary').textContent = total > 0
@@ -964,6 +967,12 @@
   // ⬇ スタッフ用パスワード(変更したい場合はここを書き換えてください)
   const STAFF_PASSWORD = 'Share0501';
 
+  // ⬇ Supabase接続情報(スタッフ間でデータ共有するため)
+  const SUPABASE_URL = 'https://luuybmftrndtpnabjhwj.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx1dXlibWZ0cm5kdHBuYWJqaHdqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM5MDE1MjgsImV4cCI6MjA4OTQ3NzUyOH0.omknjDYSGn6q6zFY54dcdnjtz1yiEoIiw1lCLIzcETw';
+  const SUPABASE_TABLE = 'pre_diagnosis_customers';
+  const sb = (window.supabase && window.supabase.createClient) ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+
   const opModeRequested = new URLSearchParams(location.search).has('op');
   let isOpSession = sessionStorage.getItem('opSession') === '1';
 
@@ -1015,21 +1024,101 @@
   function saveAppState() {
     try { localStorage.setItem(APP_STATE_KEY, JSON.stringify(appState)); } catch(_) {}
   }
+
+  // Supabase: 単一顧客を upsert(他スタッフにも同期される)
+  async function syncCustomerToCloud(c) {
+    if (!sb || !c) return;
+    try {
+      await sb.from(SUPABASE_TABLE).upsert({
+        id: c.id,
+        name: c.name || '',
+        tasks: c.tasks || [],
+        urls: c.urls || {},
+        status: c.status || 'pending',
+        updated_at: new Date(c.updatedAt || Date.now()).toISOString(),
+      });
+    } catch(e) { console.error('Sync error:', e); }
+  }
+
+  // Supabase: 顧客削除
+  async function deleteCustomerFromCloud(id) {
+    if (!sb || !id) return;
+    try { await sb.from(SUPABASE_TABLE).delete().eq('id', id); }
+    catch(e) { console.error('Delete error:', e); }
+  }
+
+  // Supabase: 全顧客を取得して appState を上書き
+  async function loadCustomersFromCloud() {
+    if (!sb) return false;
+    try {
+      const { data, error } = await sb.from(SUPABASE_TABLE).select('*');
+      if (error) { console.error('Load error:', error); return false; }
+      appState.customers = {};
+      (data || []).forEach(row => {
+        appState.customers[row.id] = {
+          id: row.id,
+          name: row.name || '',
+          tasks: row.tasks || [],
+          urls: row.urls || {},
+          status: row.status || 'pending',
+          createdAt: row.created_at ? new Date(row.created_at).getTime() : Date.now(),
+          updatedAt: row.updated_at ? new Date(row.updated_at).getTime() : Date.now(),
+        };
+      });
+      saveAppState();
+      return true;
+    } catch(e) { console.error('Load error:', e); return false; }
+  }
+
+  // 表示を更新(リアルタイム反映用)
+  function refreshOpUiIfVisible() {
+    if (!document.body.classList.contains('op-mode')) return;
+    if (!document.getElementById('op-list-view').hidden) renderCustomerList();
+    else if (!document.getElementById('op-detail-view').hidden) renderCustomerDetail();
+  }
+
+  // Supabase: 他スタッフの変更をリアルタイム購読
+  function subscribeToCustomerChanges() {
+    if (!sb) return;
+    sb.channel('pre_diagnosis_customers_changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: SUPABASE_TABLE }, (payload) => {
+        if (payload.eventType === 'DELETE' && payload.old?.id) {
+          delete appState.customers[payload.old.id];
+        } else if (payload.new?.id) {
+          const r = payload.new;
+          appState.customers[r.id] = {
+            id: r.id,
+            name: r.name || '',
+            tasks: r.tasks || [],
+            urls: r.urls || {},
+            status: r.status || 'pending',
+            createdAt: r.created_at ? new Date(r.created_at).getTime() : Date.now(),
+            updatedAt: r.updated_at ? new Date(r.updated_at).getTime() : Date.now(),
+          };
+        }
+        saveAppState();
+        refreshOpUiIfVisible();
+      })
+      .subscribe();
+  }
+
   function createCustomer(name) {
     const id = 'c_' + Math.random().toString(36).slice(2, 10);
     appState.customers[id] = {
       id, name: name.trim(),
-      tasks: [], urls: {},
+      tasks: [], urls: {}, status: 'pending',
       createdAt: Date.now(), updatedAt: Date.now(),
     };
     appState.activeCustomerId = id;
     saveAppState();
+    syncCustomerToCloud(appState.customers[id]);
     return id;
   }
   function deleteCustomerById(id) {
     delete appState.customers[id];
     if (appState.activeCustomerId === id) appState.activeCustomerId = null;
     saveAppState();
+    deleteCustomerFromCloud(id);
   }
   function fmtDate(ts) {
     const d = new Date(ts);
@@ -1115,11 +1204,14 @@
         return `<div class="detail-task-row"><div class="detail-task-name">${escapeHtml(taskName)}</div><input type="url" class="detail-task-input" data-task="${escapeHtml(taskName)}" value="${escapeHtml(c.urls[taskName] || '')}" placeholder="https://" /></div>`;
       }).join('');
       tasksEl.querySelectorAll('.detail-task-input').forEach(input => {
+        let debounceT;
         input.addEventListener('input', () => {
           c.urls[input.dataset.task] = input.value.trim();
           c.updatedAt = Date.now();
           saveAppState();
           updateDetailPreview();
+          clearTimeout(debounceT);
+          debounceT = setTimeout(() => syncCustomerToCloud(c), 600);
         });
         input.addEventListener('focus', () => input.select());
       });
@@ -1219,6 +1311,7 @@
 
   document.getElementById('back-to-list-btn').addEventListener('click', () => setOpView(VIEW.OP_LIST));
 
+  let detailNameDebounceT;
   document.getElementById('detail-customer-name').addEventListener('input', (e) => {
     const c = appState.customers[appState.activeCustomerId];
     if (!c) return;
@@ -1226,6 +1319,8 @@
     c.updatedAt = Date.now();
     saveAppState();
     updateDetailPreview();
+    clearTimeout(detailNameDebounceT);
+    detailNameDebounceT = setTimeout(() => syncCustomerToCloud(c), 600);
   });
 
   document.getElementById('start-diagnosis-btn').addEventListener('click', () => {
@@ -1272,6 +1367,7 @@
         cust.updatedAt = Date.now();
       }
       saveAppState();
+      syncCustomerToCloud(cust);
 
       saveResultBtn.disabled = true;
       saveResultBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> 保存しました';
@@ -1302,6 +1398,7 @@
     c.status = (c.status === 'sent') ? 'pending' : 'sent';
     c.updatedAt = Date.now();
     saveAppState();
+    syncCustomerToCloud(c);
     renderCustomerDetail();
   });
 
@@ -1321,6 +1418,14 @@
 
   // Initial view(認証通った場合のみ管理画面を表示)
   setOpView(isOpSession ? VIEW.OP_LIST : VIEW.CUSTOMER);
+
+  // Supabase: 認証通った場合のみクラウドからロード&リアルタイム購読
+  if (isOpSession && sb) {
+    loadCustomersFromCloud().then(ok => {
+      if (ok) refreshOpUiIfVisible();
+    });
+    subscribeToCustomerChanges();
+  }
 })();
 </script>
 
